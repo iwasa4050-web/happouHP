@@ -88,7 +88,8 @@
           d.className = '__hero-slide';
           // クロスフェード: 2 秒 + cubic-bezier で滑らかな blending。
           // 新スライドは fade-in が ease-out (早く出てくる)、古スライドは fade-out が ease-in (後半でゆっくり消える) — これで両者が中央付近で重なる
-          d.style.cssText = 'position:absolute;inset:0;background-image:url("' + src + '");background-position:center;background-size:cover;background-repeat:no-repeat;opacity:' + (i === 0 ? '1' : '0') + ';transition:opacity 2s cubic-bezier(0.4, 0, 0.2, 1);will-change:opacity,transform;transform:scale(1);transform-origin:center center;';
+          d.style.cssText = 'position:absolute;inset:0;background-image:url("' + src + '");background-position:center;background-size:cover;background-repeat:no-repeat;transition:opacity 2s cubic-bezier(0.4, 0, 0.2, 1);will-change:opacity,transform;transform:scale(1);transform-origin:center center;';
+          d.style.setProperty('opacity', i === 0 ? '1' : '0', 'important');
           container.appendChild(d);
         });
 
@@ -199,25 +200,26 @@
           }
         }, 100);
 
-        // Skip cycling if user prefers reduced motion
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
         if (hero.dataset.heroCycling === '1') return;
         hero.dataset.heroCycling = '1';
 
         var current = 0;
         var slideEls = container.children;
         var cycleTimer = null;
+        var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         function goToSlide(idx) {
           if (idx === current) return;
-          slideEls[current].style.opacity = '0';
+          // !important で setProperty しないと、バンドル CSS が上書きする
+          slideEls[current].style.setProperty('opacity', '0', 'important');
           current = ((idx % slideEls.length) + slideEls.length) % slideEls.length;
-          slideEls[current].style.opacity = '1';
+          slideEls[current].style.setProperty('opacity', '1', 'important');
           startZoom(slideEls[current]);
           if (container.__updateProgress) container.__updateProgress(current);
         }
         function startCycle() {
           if (cycleTimer) clearInterval(cycleTimer);
+          if (reduceMotion) return; // 自動回転だけスキップ、手動操作は有効
           cycleTimer = setInterval(function () {
             if (document.hidden) return;
             goToSlide((current + 1) % slideEls.length);
@@ -225,24 +227,22 @@
         }
         startCycle();
 
-        // Click handlers on progress segments
-        var segs = progress.querySelectorAll('.__hero-progress-seg');
-        for (var s2 = 0; s2 < segs.length; s2++) {
-          segs[s2].addEventListener('click', function (e) {
-            var idx = parseInt(e.currentTarget.dataset.slideIdx, 10);
+        // Click delegation on document — バンドルが progress を re-render しても確実に動く
+        if (!document.documentElement.dataset.heroDelegated) {
+          document.documentElement.dataset.heroDelegated = '1';
+          document.addEventListener('click', function (e) {
+            var btn = e.target.closest('.__hero-progress-seg, [data-slide-idx]');
+            if (!btn || !btn.matches('.__hero-progress-seg, [data-slide-idx]')) return;
+            // 進行バー専用 — hero 内部の他要素は無視
+            var insideProgress = btn.closest('#__hero_progress');
+            if (!insideProgress) return;
+            e.preventDefault();
+            e.stopPropagation();
+            var idx = parseInt(btn.dataset.slideIdx, 10);
             if (isNaN(idx)) return;
             goToSlide(idx);
-            startCycle(); // クリック後に 8 秒タイマー再スタート
-          });
-          // Hover で track 明るく
-          segs[s2].addEventListener('mouseenter', function (e) {
-            var track = e.currentTarget.firstElementChild;
-            if (track) track.style.background = 'rgba(246,241,231,0.55)';
-          });
-          segs[s2].addEventListener('mouseleave', function (e) {
-            var track = e.currentTarget.firstElementChild;
-            if (track) track.style.background = 'rgba(246,241,231,0.3)';
-          });
+            startCycle();
+          }, true); // capture phase で他のリスナーより先に
         }
       }
       function tagBrandCards() {
