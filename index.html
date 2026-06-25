@@ -768,50 +768,49 @@
       document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
     })();
 
-    // === Photo strip marquee (rAF-driven, bulletproof) ===
+    // === Photo strip marquee (rAF-driven, runs unconditionally) ===
     (function () {
-      var track = document.querySelector('.strip .marquee-track');
-      if (!track) return;
-      var speed = 70; // px per second (PC); mobile auto-scales by content width
-      var x = 0;
-      var last = null;
-      var paused = false;
-      var halfWidth = 0;
+      function start() {
+        var track = document.querySelector('.strip .marquee-track');
+        if (!track) { console.warn('[strip] no marquee track found'); return; }
+        var x = 0;
+        var last = null;
+        var paused = false;
+        var halfWidth = track.scrollWidth / 2;
 
-      function measure() {
-        // Total content width / 2 = one full set (we duplicated 9 → 18 items)
-        halfWidth = track.scrollWidth / 2;
-      }
+        // Force initial transform so we know JS path is alive
+        track.style.transform = 'translate3d(0px, 0, 0)';
 
-      function tick(t) {
-        if (last !== null && !paused && halfWidth > 0) {
+        function tick(t) {
+          if (last === null) { last = t; requestAnimationFrame(tick); return; }
           var dt = (t - last) / 1000;
-          x -= speed * dt;
-          if (x <= -halfWidth) x += halfWidth;
-          track.style.transform = 'translate3d(' + x + 'px, 0, 0)';
+          last = t;
+          if (!paused && halfWidth > 0) {
+            x -= 70 * dt; // 70 px/sec
+            if (x <= -halfWidth) x += halfWidth;
+            track.style.transform = 'translate3d(' + x.toFixed(2) + 'px, 0, 0)';
+          }
+          requestAnimationFrame(tick);
         }
-        last = t;
+
+        track.addEventListener('mouseenter', function () { paused = true; });
+        track.addEventListener('mouseleave', function () { paused = false; });
+
+        // Recompute halfWidth whenever images finish loading or viewport changes
+        function remeasure() { halfWidth = track.scrollWidth / 2; }
+        window.addEventListener('resize', remeasure);
+        track.querySelectorAll('img').forEach(function (img) {
+          if (!img.complete) img.addEventListener('load', remeasure, { once: true });
+        });
         requestAnimationFrame(tick);
+        console.log('[strip] marquee started, halfWidth=' + halfWidth);
       }
 
-      // Pause on hover (PC) / touch-hold (mobile)
-      track.addEventListener('mouseenter', function () { paused = true; });
-      track.addEventListener('mouseleave', function () { paused = false; });
-      track.addEventListener('touchstart', function () { paused = true; }, { passive: true });
-      track.addEventListener('touchend',   function () { paused = false; }, { passive: true });
-
-      // Respect prefers-reduced-motion
-      var reduceMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
-      if (reduceMQ.matches) return;
-
-      // Re-measure after each image load and on resize (handles lazy-load growth)
-      window.addEventListener('resize', measure);
-      track.querySelectorAll('img').forEach(function (img) {
-        if (img.complete) return;
-        img.addEventListener('load', measure, { once: true });
-      });
-      measure();
-      requestAnimationFrame(tick);
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start);
+      } else {
+        start();
+      }
     })();
 
     // === Hero progress indicator click ===
