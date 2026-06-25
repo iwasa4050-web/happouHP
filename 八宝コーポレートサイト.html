@@ -615,18 +615,19 @@
           // Load Google Fonts for the new typography system
           '@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Montserrat:wght@500;600&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@300;400;500&display=swap");',
           // === Hero スライド自動切替 (純 CSS) — クロスフェード + Ken Burns zoom ===
-          // 24 秒サイクル、各スライド 6 秒間表示、1.5 秒のオーバーラップ・クロスフェード
+          // 24 秒サイクル、各スライド表示開始から終了まで滑らかに scale(1.0 → 1.15)
           '@keyframes __heroFadeKf {',
           '  0%   { opacity: 0; transform: scale(1); }',
-          '  6%   { opacity: 1; }',                  /* fade in 1.4s */
-          '  25%  { opacity: 1; transform: scale(1.06); }',  /* zoom over visible window */
-          '  31%  { opacity: 0; transform: scale(1.06); }',  /* fade out 1.4s */
+          '  6%   { opacity: 1; transform: scale(1.02); }',
+          '  25%  { opacity: 1; transform: scale(1.15); }',
+          '  31%  { opacity: 0; transform: scale(1.17); }',
           '  100% { opacity: 0; transform: scale(1); }',
           '}',
           '#__hero_slides > div {',
           '  animation: __heroFadeKf 24s linear infinite both !important;',
-          '  transform-origin: center center;',
-          '  will-change: opacity, transform;',
+          '  transform-origin: center center !important;',
+          '  will-change: opacity, transform !important;',
+          '  transition: none !important;',  /* prevent bundle transition override */
           '}',
           '#__hero_slides > div:nth-child(1) { animation-delay: 0s !important; }',
           '#__hero_slides > div:nth-child(2) { animation-delay: 6s !important; }',
