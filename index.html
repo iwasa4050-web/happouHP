@@ -525,7 +525,7 @@
           <p class="eyebrow">NEWS</p>
           <h2 id="news-heading">お知らせ</h2>
         </div>
-        <div class="list">
+        <div class="list" id="topNewsList">
           <article class="item">
             <time class="date" datetime="2024-05-10">2024.05.10</time>
             <span class="tag">お知らせ</span>
@@ -541,7 +541,7 @@
             <span class="tag">メディア</span>
             <p class="title">大和茶スイーツの季節限定メニューが始まりました</p>
           </article>
-          <a href="#" class="moreLink" aria-label="お知らせ一覧を見る">一覧を見る</a>
+          <a href="お知らせ.html" class="moreLink" aria-label="お知らせ一覧を見る">一覧を見る</a>
         </div>
       </div>
     </section>
@@ -818,6 +818,38 @@
           }
         });
       });
+    })();
+  </script>
+
+  <!-- microCMS お知らせ動的読み込み (news-config.js で設定) -->
+  <script src="news-config.js"></script>
+  <script>
+    (function () {
+      var conf = window.MICROCMS_CONFIG || {};
+      if (!conf.serviceDomain || !conf.apiKey) return; // 未設定なら静的データのまま
+      var listEl = document.getElementById('topNewsList');
+      if (!listEl) return;
+
+      var url = 'https://' + conf.serviceDomain + '.microcms.io/api/v1/' + (conf.endpoint || 'news') + '?orders=-publishedAt&limit=3&fields=id,publishedAt,category,title';
+      fetch(url, { headers: { 'X-MICROCMS-API-KEY': conf.apiKey } })
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function (data) {
+          var items = data.contents || [];
+          if (!items.length) return;
+          function fmt(s) { var d = new Date(s); if (isNaN(d.getTime())) return s; return d.getFullYear() + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + d.getDate()).slice(-2); }
+          function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); }
+          var html = items.map(function (it) {
+            var cat = it.category ? (typeof it.category === 'string' ? it.category : (it.category.name || '')) : 'お知らせ';
+            return '<article class="item">' +
+              '<time class="date" datetime="' + esc(it.publishedAt) + '">' + esc(fmt(it.publishedAt)) + '</time>' +
+              '<span class="tag">' + esc(cat) + '</span>' +
+              '<a class="title" href="お知らせ.html#id=' + esc(it.id) + '" style="color:inherit;">' + esc(it.title) + '</a>' +
+              '</article>';
+          }).join('');
+          html += '<a href="お知らせ.html" class="moreLink" aria-label="お知らせ一覧を見る">一覧を見る</a>';
+          listEl.innerHTML = html;
+        })
+        .catch(function (err) { console.warn('[top news] microCMS fetch failed:', err); });
     })();
   </script>
 
