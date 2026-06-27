@@ -271,6 +271,7 @@
     </div>
     <div class="col">
       <h4>SITEMAP</h4>
+      <a href="お知らせ.html">お知らせ</a>
       <a href="八宝の想い.html">八宝の想い</a>
       <a href="事業内容.html">事業内容</a>
       <a href="採用情報.html">採用情報</a>
@@ -292,12 +293,8 @@
 
 <script>
 (function () {
-  // ===== Fallback static data (used when microCMS not configured) =====
-  var FALLBACK = [
-    { id: 'sample-3', publishedAt: '2024-05-10', category: 'お知らせ', title: '夏季休業に伴う休業日のお知らせ', body: '<p>誠に勝手ながら、8 月 13 日（火）から 8 月 16 日（金）まで夏季休業とさせていただきます。<br>8 月 17 日（土）より通常営業いたします。</p>' },
-    { id: 'sample-2', publishedAt: '2024-04-25', category: '新店舗', title: '新店舗「奈良の酒蔵全部呑み うまっしゅ」を奈良公園エリアにオープン', body: '<p>このたび、奈良公園エリアに新店舗「奈良の酒蔵全部呑み うまっしゅ」をオープンいたしました。<br>奈良県内 29 の酒蔵から仕入れた地酒と、旬の食材を使った手づくり料理をお楽しみいただけます。</p>' },
-    { id: 'sample-1', publishedAt: '2024-04-10', category: 'メディア', title: '大和茶スイーツの季節限定メニューが始まりました', body: '<p>GRANCHA より、大和茶を使用した季節限定スイーツの提供を開始いたしました。<br>春の新茶を活かしたパフェやプリンをご用意しております。ぜひお試しください。</p>' },
-  ];
+  // ===== Fallback static data (empty — microCMS で投稿管理) =====
+  var FALLBACK = [];
 
   var PER_PAGE = 10;
   var listEl = document.getElementById('newsListItems');
